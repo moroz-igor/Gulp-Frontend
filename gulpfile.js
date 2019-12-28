@@ -1,0 +1,100 @@
+'use strict';
+/** gulp connection **/
+var gulp = require('gulp'),
+/** connection of gulp plugins **/
+    gp = require('gulp-load-plugins')(),
+/** automatic deleting files from build analogic src **/
+    del = require('del'),
+    browserSync = require('browser-sync').create();
+var useref = require('gulp-useref'),
+    rimraf = require('rimraf');
+
+
+/** automatic  reloader of the browser **/
+gulp.task('serve', function() {
+    browserSync.init({
+        port: 3000,
+        server: {
+            baseDir: "./build"
+        }
+    });
+});
+/** automatic deleting files from build analogic src **/
+gulp.task('deleting', function () {
+  return del([
+    'build/*.html',
+    'build/css/*.css',
+    '!build/css/bootstrap.min.css',
+    'build/img/**/*.*'
+    //'build/img/*'
+  ]);
+});
+/** pug compile **/
+gulp.task('pug', function() {
+    return gulp.src('src/blocks/*.pug')
+        .pipe(gp.plumber())
+        .pipe(gp.pug({
+            pretty: true
+        }))
+        .pipe(gulp.dest('build'))
+        .on('end', browserSync.reload);
+});
+/** sass compile**/
+gulp.task('sass', function() {
+    return gulp.src('src/blocks/*.scss')
+        .pipe(gp.sourcemaps.init())
+        .pipe(gp.plumber())
+        .pipe(gp.sass().on('error', gp.sass.logError))
+        .pipe(gp.autoprefixer({
+            browsers: ['last 10 versions'],
+            cascade: true
+        }))
+        .on("error", gp.notify.onError({
+            title: "style"
+        }))
+        .pipe(gp.csso())
+        .pipe(gp.sourcemaps.write())
+        .pipe(gulp.dest('build/css'))
+        .pipe(browserSync.reload({
+            stream: true
+        }));
+});
+/** connection of the js libs **/
+gulp.task('scripts_lib', function() {
+    return gulp.src(['node_modules/jquery/dist/jquery.min.js'])
+        .pipe(gp.concat('libs.min.js'))
+        .pipe(gulp.dest('build/js'))
+        .pipe(browserSync.reload({
+            stream: true
+        }));
+});
+/** connection of the js files **/
+gulp.task('scripts', function() {
+    return gulp.src('src/scripts/main.js')
+        .pipe(gulp.dest('build/js'))
+        .pipe(browserSync.reload({
+            stream: true
+        }));
+});
+//copy images from 'src'  to 'build'
+gulp.task('img', function() {
+	return gulp.src('src/images/**/*.*')
+		//.pipe(gulp.dest('server/img'))
+		.pipe(gulp.dest('build/img'));
+});
+
+
+/** watcher for all files **/
+gulp.task('watch', function() {
+    gulp.watch('src/blocks/**/*.pug', gulp.series('pug'));
+    gulp.watch('src/blocks/**/*.scss', gulp.series('sass'));
+    gulp.watch('src/scripts/**/*.js', gulp.series('scripts'));
+    gulp.watch('src/blocks/*.pug', gulp.series('deleting'));
+});
+
+
+/** parallel connection of difrent tasks **/
+gulp.task('default', gulp.series(
+    gulp.parallel('pug', 'sass', 'scripts_lib', 'scripts', 'deleting'),
+    gulp.parallel('watch', 'serve', 'img')
+));
