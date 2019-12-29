@@ -37,6 +37,7 @@ gulp.task('pug', function() {
             pretty: true
         }))
         .pipe(gulp.dest('build'))
+        .pipe(gulp.dest('../server/build'))
         .on('end', browserSync.reload);
 });
 /** sass compile**/
@@ -55,6 +56,7 @@ gulp.task('sass', function() {
         .pipe(gp.csso())
         .pipe(gp.sourcemaps.write())
         .pipe(gulp.dest('build/css'))
+        .pipe(gulp.dest('../server/build/css'))
         .pipe(browserSync.reload({
             stream: true
         }));
@@ -64,6 +66,7 @@ gulp.task('scripts_lib', function() {
     return gulp.src(['node_modules/jquery/dist/jquery.min.js'])
         .pipe(gp.concat('libs.min.js'))
         .pipe(gulp.dest('build/js'))
+        .pipe(gulp.dest('../server/build/js'))
         .pipe(browserSync.reload({
             stream: true
         }));
@@ -72,6 +75,7 @@ gulp.task('scripts_lib', function() {
 gulp.task('scripts', function() {
     return gulp.src('src/scripts/main.js')
         .pipe(gulp.dest('build/js'))
+        .pipe(gulp.dest('../server/build/js'))
         .pipe(browserSync.reload({
             stream: true
         }));
@@ -79,10 +83,28 @@ gulp.task('scripts', function() {
 //copy images from 'src'  to 'build'
 gulp.task('img', function() {
 	return gulp.src('src/images/**/*.*')
-		//.pipe(gulp.dest('server/img'))
+		.pipe(gulp.dest('../server/build/img'))
 		.pipe(gulp.dest('build/img'));
 });
+//copy  fonts of 'src'  to 'build'
+gulp.task('fonts', function() {
+	return gulp.src('src/fonts/**/*.*')
+		.pipe(gulp.dest('../server/build/fonts'))
+		.pipe(gulp.dest('build/fonts'));
+});
 
+//copy svg fonts of 'src'  to 'build'
+gulp.task('svg', function() {
+	return gulp.src('src/svg/**/*.*')
+		.pipe(gulp.dest('../server/build/svg'))
+		.pipe(gulp.dest('build/svg'));
+});
+//copy bootstrap lib in 'src'  to 'build and server'
+gulp.task('csslib', function() {
+	return gulp.src('src/bootstrap/*.*')
+		.pipe(gulp.dest('../server/build/css'))
+		.pipe(gulp.dest('build/css'));
+});
 
 /** watcher for all files **/
 gulp.task('watch', function() {
@@ -91,10 +113,8 @@ gulp.task('watch', function() {
     gulp.watch('src/scripts/**/*.js', gulp.series('scripts'));
     gulp.watch('src/blocks/*.pug', gulp.series('deleting'));
 });
-
-
 /** parallel connection of difrent tasks **/
 gulp.task('default', gulp.series(
     gulp.parallel('pug', 'sass', 'scripts_lib', 'scripts', 'deleting'),
-    gulp.parallel('watch', 'serve', 'img')
+    gulp.parallel('watch', 'serve', 'img','fonts', 'svg', 'csslib')
 ));
